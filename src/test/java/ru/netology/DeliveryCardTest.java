@@ -1,34 +1,45 @@
 package ru.netology;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+import com.codeborne.selenide.Condition;
+import com.codeborne.selenide.Configuration;
+import com.codeborne.selenide.SelenideElement;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.Keys;
 
-import java.time.Duration;
 
-import static com.codeborne.selenide.Condition.*;
-import static com.codeborne.selenide.Selectors.*;
+import static com.codeborne.selenide.Condition.visible;
 import static com.codeborne.selenide.Selenide.*;
 
 class DeliveryCardTest {
-    @Test
-    void shouldRegisterByAccountNumberDOMModification() {
-        open("http://localhost:9999");
-        $$(".tab-item").find(exactText("По номеру счёта")).click();
-        $("[name='number']").setValue("4055 0100 0123 4613 8564");
-        $("[name='phone']").setValue("+792000000000");
-        $$("button").find(exactText("Продолжить")).click();
-        $(withText("Успешная авторизация")).shouldBe(visible, Duration.ofMillis(5000));
-        $(byText("Личный кабинет")).shouldBe(visible, Duration.ofMillis(5000));
-    }
+
 
     @Test
-    void shouldRegisterByAccountNumberVisibilityChange() {
+    void formSubmission()  {
+
+        LocalDate date = LocalDate.now(); // получаем текущую дату
+        date = date.plusDays(3); // добавляем 3 дня к текущей дате
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy"); // необходимый формат даты для заяки
+        String data = dateFormatter.format(date);
+
+        Configuration.holdBrowserOpen = true;
         open("http://localhost:9999");
-        $$(".tab-item").find(exactText("По номеру счёта")).click();
-        $$("[name='number']").last().setValue("4055 0100 0123 4613 8564");
-        $$("[name='phone']").last().setValue("+792000000000");
-        $$("button").find(exactText("Продолжить")).click();
-        $(withText("Успешная авторизация")).shouldBe(visible, Duration.ofSeconds(5));
-        $(byText("Личный кабинет")).shouldBe(visible, Duration.ofSeconds(5));
+        SelenideElement city = $("[data-test-id='city']");
+        city.$("[class='input__control']").setValue("Йошкар-Ола");
+        SelenideElement dateApp = $("[data-test-id='date']");
+        dateApp.$("[class='input__control']").sendKeys(Keys.CONTROL + "a", Keys.DELETE); // очистка поля с датой
+        dateApp.$("[class='input__control']").setValue(data);
+        SelenideElement name = $("[data-test-id='name']");
+        name.$("[class='input__control']").setValue("Сидоров Иван");
+        SelenideElement phone = $("[data-test-id='phone']");
+        phone.$("[class='input__control']").setValue("+79021234567");
+        SelenideElement agreement = $("[data-test-id='agreement']");
+        agreement.$("[class='checkbox__box']").click();
+        $$("button").find(Condition.exactText("Забронировать")).click();
+        Configuration.timeout = 15_000;
+        SelenideElement notification = $("[data-test-id='notification']").shouldBe(visible);
     }
 }
 
